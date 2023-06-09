@@ -60,3 +60,17 @@ proxyController.get("/:host/:port/used", async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 });
+
+proxyController.get("/proxy/unused", async (req, res) => {
+  try {
+    const proxy = await Proxy.findOne({ isUsed: false });
+
+    if (proxy) {
+      res.status(200).json(proxy);
+    } else {
+      res.status(404).json({ message: "No unused proxy found" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
+  }
+});

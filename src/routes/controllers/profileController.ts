@@ -5,6 +5,8 @@ import logger from "../../custom-logger";
 import Profile, { IProfile } from "../../models/profile";
 import { faker } from "@faker-js/faker";
 import userAgent from "user-agents";
+import Proxy, { IProxyDetails } from "../../models/proxy";
+import UserAgent from "user-agents";
 
 dotenv.config();
 
@@ -14,19 +16,17 @@ const apiClientv1 = new ApiClient(process.env.MULTILOGIN_APIv1 ?? "");
 export const profileController = express.Router();
 
 // Generate a user agent based on the provided OS type
-const generateUserAgent = (osType: string, deviceType: string): string => {
+const generateUserAgent = (osType: string, deviceType: string): UserAgent => {
   const agent = new userAgent({
     deviceCategory: deviceType,
     platform: osType,
   });
-  return agent.random().toString();
+  return agent.random();
 };
 
 // Function to generate a random profile
-const generateProfile = (): IProfile => {
+const generateProfile = (proxy: IProxyDetails): IProfile => {
   const profileId = faker.string.uuid();
-  const proxyIp = faker.internet.ip();
-  const proxyPort = faker.internet.port().toString();
   const os = faker.helpers.arrayElement(["win", "lin", "mac"]);
   let userAgent;
   switch (os) {
@@ -48,8 +48,9 @@ const generateProfile = (): IProfile => {
     name: profileId,
     notes: faker.lorem.sentence(),
     navigator: {
-      userAgent: userAgent ?? "",
-      resolution: "1920x1080",
+      userAgent: userAgent?.toString() + "",
+      resolution:
+        userAgent?.data.screenWidth + "x" + userAgent?.data.screenHeight,
       language: "en-US",
       platform: os,
       doNotTrack: 0,
@@ -58,10 +59,10 @@ const generateProfile = (): IProfile => {
     network: {
       proxy: {
         type: "HTTP",
-        host: proxyIp,
-        port: proxyPort,
-        username: "user",
-        password: "pass",
+        host: proxy.host,
+        port: proxy.port,
+        username: proxy.username,
+        password: proxy.password,
       },
     },
     os: os,
@@ -95,8 +96,18 @@ profileController.post("/generate/:count", async (req, res) => {
     const profiles: IProfile[] = [];
 
     for (let i = 0; i < parseInt(count); i++) {
-      const newProfile = generateProfile();
-      profiles.push(newProfile);
+      const proxyDocument = await Proxy.findOne({ isUsed: false });
+      if (proxyDocument !== null) {
+        const proxy = proxyDocument.toObject() as IProxyDetails;
+        const newProfile = generateProfile(proxy);
+        apiClientv2
+          .post("/profile", newProfile)
+          .then((response) => {
+            logger.info(response);
+            profiles.push(newProfile);
+          })
+          .catch((error) => logger.error(error));
+      }
     }
 
     // Save the generated profiles to the database

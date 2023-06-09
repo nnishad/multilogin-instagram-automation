@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-interface IProxyDetails extends Document {
+export interface IProxyDetails extends Document {
   host: string;
   port: string;
   username: string;
