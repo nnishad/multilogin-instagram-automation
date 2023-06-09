@@ -72,7 +72,7 @@ const generateProfile = (proxy: IProxyDetails): IProfile => {
 };
 
 profileController.get("/all", async function (req, res, next) {
-  apiClientv2
+  await apiClientv2
     .get("/profile")
     .then((response) => {
       Profile.updateMany({}, response as IProfile[], { upsert: true });
@@ -102,15 +102,23 @@ profileController.post("/generate/:count", async (req, res) => {
         const newProfile = generateProfile(proxy);
         await apiClientv2
           .post("/profile", newProfile)
-          .then((response: any) => {
+          .then(async (response: any) => {
             logger.info(response.uuid);
             newProfile.uuid = response.uuid;
-            logger.info(newProfile);
             profiles.push(newProfile);
+            proxyDocument.isUsed = true;
+            await proxyDocument.save();
           })
           .catch((error) => {
             logger.error(error);
           });
+      } else {
+        // Save the generated profiles to the database
+        await Profile.insertMany(profiles);
+        return res.status(404).json({
+          message: `Profiles created: ${profiles.length}`,
+          error: "No new proxy found to create profile",
+        });
       }
     }
 
