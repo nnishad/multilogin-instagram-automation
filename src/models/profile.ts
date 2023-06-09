@@ -37,9 +37,6 @@ interface ITimezone {
 interface IGeolocation {
   mode: string;
   fillBasedOnExternalIp: boolean;
-  lat: number;
-  lng: number;
-  accuracy: number;
 }
 
 interface IAudioContext {
@@ -91,6 +88,7 @@ interface IPorts {
 }
 
 export interface IProfile extends Document {
+  uuid: string;
   name: string;
   notes: string;
   googleServices: boolean;
@@ -151,9 +149,6 @@ const defaultTimezone: ITimezone = {
 const defaultGeolocation: IGeolocation = {
   mode: "PROMPT",
   fillBasedOnExternalIp: true,
-  lat: 0,
-  lng: 0,
-  accuracy: 0,
 };
 
 const defaultAudioContext: IAudioContext = {
@@ -200,6 +195,7 @@ const defaultExtensions: IExtensions = {
 };*/
 
 const profileSchema = new Schema<IProfile>({
+  uuid: { type: String },
   name: { type: String, required: true },
   notes: { type: String, default: "Default Notes" },
   googleServices: { type: Boolean, default: true },

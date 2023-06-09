@@ -61,7 +61,7 @@ proxyController.get("/:host/:port/used", async (req, res) => {
   }
 });
 
-proxyController.get("/proxy/unused", async (req, res) => {
+proxyController.get("/unused", async (req, res) => {
   try {
     const proxy = await Proxy.findOne({ isUsed: false });
 

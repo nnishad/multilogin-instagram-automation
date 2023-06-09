@@ -100,13 +100,17 @@ profileController.post("/generate/:count", async (req, res) => {
       if (proxyDocument !== null) {
         const proxy = proxyDocument.toObject() as IProxyDetails;
         const newProfile = generateProfile(proxy);
-        apiClientv2
+        await apiClientv2
           .post("/profile", newProfile)
-          .then((response) => {
-            logger.info(response);
+          .then((response: any) => {
+            logger.info(response.uuid);
+            newProfile.uuid = response.uuid;
+            logger.info(newProfile);
             profiles.push(newProfile);
           })
-          .catch((error) => logger.error(error));
+          .catch((error) => {
+            logger.error(error);
+          });
       }
     }
 
