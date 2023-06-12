@@ -2,7 +2,35 @@ import express from "express";
 import Proxy from "../../models/proxy";
 export const proxyController = express.Router();
 
-// POST /api/proxy
+/**
+ * @swagger
+ * /proxy:
+ *   post:
+ *     summary: Add a new proxy
+ *     tags: [Proxy]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               host:
+ *                 type: string
+ *               port:
+ *                 type: integer
+ *               username:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Proxy added successfully
+ *       409:
+ *         description: Proxy already exists
+ *       500:
+ *         description: Internal server error
+ */
 proxyController.post("/", async (req, res) => {
   try {
     const { host, port, username, password } = req.body;
@@ -32,6 +60,18 @@ proxyController.post("/", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /proxy:
+ *   get:
+ *     summary: Get all proxies
+ *     tags: [Proxy]
+ *     responses:
+ *       200:
+ *         description: Proxies retrieved successfully
+ *       500:
+ *         description: Internal server error
+ */
 proxyController.get("/", async (req, res) => {
   try {
     const proxies = await Proxy.find();
@@ -42,7 +82,33 @@ proxyController.get("/", async (req, res) => {
   }
 });
 
-// GET /api/proxy/:host/:port/used
+/**
+ * @swagger
+ * /proxy/{host}/{port}/used:
+ *   get:
+ *     summary: Check if a proxy is used
+ *     tags: [Proxy]
+ *     parameters:
+ *       - in: path
+ *         name: host
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The proxy host
+ *       - in: path
+ *         name: port
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The proxy port
+ *     responses:
+ *       200:
+ *         description: Proxy usage checked successfully
+ *       404:
+ *         description: Proxy not found
+ *       500:
+ *         description: Internal server error
+ */
 proxyController.get("/:host/:port/used", async (req, res) => {
   const { host, port } = req.params;
 
@@ -61,6 +127,20 @@ proxyController.get("/:host/:port/used", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /proxy/unused:
+ *   get:
+ *     summary: Get an unused proxy
+ *     tags: [Proxy]
+ *     responses:
+ *       200:
+ *         description: Proxy retrieved successfully
+ *       404:
+ *         description: No unused proxy found
+ *       500:
+ *         description: Internal server error
+ */
 proxyController.get("/unused", async (req, res) => {
   try {
     const proxy = await Proxy.findOne({ isUsed: false });

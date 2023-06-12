@@ -71,6 +71,18 @@ const generateProfile = (proxy: IProxyDetails): IProfile => {
   return new Profile(newProfile);
 };
 
+/**
+ * @swagger
+ * /profile/all:
+ *   get:
+ *     summary: Retrieve all profiles
+ *     tags: [Profile]
+ *     responses:
+ *       200:
+ *         description: Successful operation
+ *       500:
+ *         description: Internal server error
+ */
 profileController.get("/all", async function (req, res, next) {
   await apiClientv2
     .get("/profile")
@@ -84,6 +96,29 @@ profileController.get("/all", async function (req, res, next) {
     });
 });
 
+/**
+ * @swagger
+ * /profile/generate/{count}:
+ *   post:
+ *     summary: Generate profiles
+ *     tags: [Profile]
+ *     parameters:
+ *       - in: path
+ *         name: count
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The number of profiles to generate
+ *     responses:
+ *       200:
+ *         description: Profiles generated successfully
+ *       400:
+ *         description: Invalid count value
+ *       404:
+ *         description: No new proxy found to create profile
+ *       500:
+ *         description: Internal server error
+ */
 // POST endpoint to generate profiles
 profileController.post("/generate/:count", async (req, res) => {
   try {
@@ -132,6 +167,27 @@ profileController.post("/generate/:count", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /profile/{id}:
+ *   get:
+ *     summary: Get a profile by ID
+ *     tags: [Profile]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the profile to retrieve
+ *     responses:
+ *       200:
+ *         description: Profile retrieved successfully
+ *       404:
+ *         description: Profile not found
+ *       500:
+ *         description: Internal server error
+ */
 profileController.get("/:id", (req, res) => {
   const profileId = req.params.id;
 
@@ -150,6 +206,27 @@ profileController.get("/:id", (req, res) => {
   });
 });
 
+/**
+ * @swagger
+ * /profile/{id}:
+ *   delete:
+ *     summary: Delete a profile by ID
+ *     tags: [Profile]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the profile to delete
+ *     responses:
+ *       200:
+ *         description: Profile deleted successfully
+ *       404:
+ *         description: Profile not found
+ *       500:
+ *         description: Internal server error
+ */
 profileController.delete("/:id", (req, res) => {
   const profileId = req.params.id;
 
