@@ -221,8 +221,8 @@ profileController.post("/generate/:count", async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-profileController.get("/:id", async (req, res) => {
-  const profileId = req.params.id;
+profileController.get("/:uuid", async (req, res) => {
+  const profileId = req.params.uuid;
 
   try {
     const profile = await Profile.findOne({ uuid: profileId });
@@ -259,8 +259,8 @@ profileController.get("/:id", async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-profileController.delete("/:id", (req, res) => {
-  const profileId = req.params.id;
+profileController.delete("/:uuid", (req, res) => {
+  const profileId = req.params;
 
   Profile.findByIdAndRemove(profileId, (err: any, profile: IProfile) => {
     if (err) {
@@ -309,13 +309,13 @@ profileController.delete("/:id", (req, res) => {
  *       500:
  *         description: Internal server error
  */
-profileController.post("/:id/addAccount", async (req, res) => {
-  const { id } = req.params; // Get the profile ID from the request parameters
+profileController.post("/:uuid/addAccount", async (req, res) => {
+  const { uuid } = req.params; // Get the profile ID from the request parameters
   const { account } = req.body; // Get the account object from the request body
 
   try {
     // Find the profile by ID
-    const profile: IProfile | null = await Profile.findById(id);
+    const profile = await Profile.findOne({ uuid });
 
     if (!profile) {
       return res.status(404).json({ error: "Profile not found" });
