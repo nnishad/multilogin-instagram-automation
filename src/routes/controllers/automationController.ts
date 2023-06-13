@@ -1,3 +1,4 @@
+/*
 import express from "express";
 import PuppeteerInstagram from "../../lib/puppeteerInstagram";
 
@@ -17,3 +18,4 @@ automationController.get("/createAccount", async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 });
+*/
