@@ -4,7 +4,6 @@ import ApiClient from "../../util/apiClient";
 import logger from "../../custom-logger";
 import Profile, { IProfile } from "../../models/profile";
 import { faker } from "@faker-js/faker";
-import userAgent from "user-agents";
 import Proxy, { IProxyDetails } from "../../models/proxy";
 import UserAgent from "user-agents";
 
@@ -15,8 +14,8 @@ const apiClientv1 = new ApiClient(process.env.MULTILOGIN_APIv1 ?? "");
 
 export const profileController = express.Router();
 
-const generateUserAgent = (osType: string, deviceType: string): UserAgent => {
-  const agent = new userAgent({
+const generateUserAgent = (osType: string, deviceType: string) => {
+  const agent = new UserAgent({
     deviceCategory: deviceType,
     platform: osType,
   });
@@ -50,7 +49,7 @@ const generateProfile = (proxy: IProxyDetails): IProfile => {
       resolution:
         userAgent?.data.screenWidth + "x" + userAgent?.data.screenHeight,
       language: "en-US",
-      platform: os,
+      platform: userAgent?.data.platform + "",
       doNotTrack: 0,
       hardwareConcurrency: 4,
     },
