@@ -15,7 +15,6 @@ const apiClientv1 = new ApiClient(process.env.MULTILOGIN_APIv1 ?? "");
 
 export const profileController = express.Router();
 
-// Generate a user agent based on the provided OS type
 const generateUserAgent = (osType: string, deviceType: string): UserAgent => {
   const agent = new userAgent({
     deviceCategory: deviceType,
@@ -24,7 +23,6 @@ const generateUserAgent = (osType: string, deviceType: string): UserAgent => {
   return agent.random();
 };
 
-// Function to generate a random profile
 const generateProfile = (proxy: IProxyDetails): IProfile => {
   const profileId = faker.string.uuid();
   const os = faker.helpers.arrayElement(["win", "lin", "mac"]);
@@ -119,7 +117,6 @@ profileController.get("/all", async function (req, res, next) {
  *       500:
  *         description: Internal server error
  */
-// POST endpoint to generate profiles
 profileController.post("/generate/:count", async (req, res) => {
   try {
     const count = req.params.count;
@@ -243,4 +240,102 @@ profileController.delete("/:id", (req, res) => {
 
     res.json({ message: "Profile removed successfully." });
   });
+});
+
+/**
+ * @swagger
+ * /profile/{id}/addAccount:
+ *   post:
+ *     summary: Add an account to a profile
+ *     tags: [Profile]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the profile
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               account:
+ *                 type: object
+ *     responses:
+ *       200:
+ *         description: Account added to profile
+ *       400:
+ *         description: Account limit reached for this profile
+ *       404:
+ *         description: Profile not found
+ *       500:
+ *         description: Internal server error
+ */
+profileController.post("/:id/addAccount", async (req, res) => {
+  const { id } = req.params; // Get the profile ID from the request parameters
+  const { account } = req.body; // Get the account object from the request body
+
+  try {
+    // Find the profile by ID
+    const profile: IProfile | null = await Profile.findById(id);
+
+    if (!profile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+
+    // Check if the profile already has two accounts
+    if (profile.accounts.length >= 2) {
+      return res
+        .status(400)
+        .json({ error: "Account limit reached for this profile" });
+    }
+
+    // Add the account to the profile's accounts array
+    profile.accounts.push(account);
+
+    // Save the updated profile
+    await profile.save();
+
+    return res
+      .status(200)
+      .json({ message: "Account added to profile", profile });
+  } catch (error) {
+    console.error("Error adding account to profile:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/**
+ * @swagger
+ * /profile/unused:
+ *   get:
+ *     summary: Get unused profiles
+ *     tags: [Profile]
+ *     responses:
+ *       200:
+ *         description: Profiles retrieved successfully
+ *       500:
+ *         description: Internal server error
+ */
+profileController.get("/unused", async (req, res) => {
+  try {
+    // Find profiles where the number of accounts is less than 2
+    const profiles: Array<{ id: string; remainingAccounts: number }> =
+      await Profile.aggregate([
+        {
+          $project: {
+            id: "$uuid",
+            remainingAccounts: { $subtract: [2, { $size: "$accounts" }] },
+          },
+        },
+      ]);
+
+    return res.status(200).json({ profiles });
+  } catch (error) {
+    console.error("Error retrieving profiles:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
 });

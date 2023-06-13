@@ -1,5 +1,4 @@
 import mongoose, { Schema, Document } from "mongoose";
-import { tr } from "@faker-js/faker";
 
 interface INavigator {
   userAgent: string;
@@ -86,6 +85,11 @@ interface IPorts {
   mode: string;
   localPortsExclude: number[];
 }
+interface IAccount {
+  username: string;
+  password: string;
+  phoneNumber: string;
+}
 
 export interface IProfile extends Document {
   uuid: string;
@@ -115,6 +119,7 @@ export interface IProfile extends Document {
   ports: IPorts;
   browser: string;
   os: string;
+  accounts: IAccount[];
 }
 
 const defaultNavigator: INavigator = {
@@ -176,23 +181,7 @@ const defaultWebGL: IWebGL = {
   mode: "NOISE",
 };
 
-/*const defaultWebGLMetadata: IWebGLMetadata = {
-  mode: "",
-  vendor: "",
-  renderer: "",
-};*/
-
-/*
-const defaultExtensions: IExtensions = {
-  enable: false,
-  names: [],
-};
-*/
-
-/*const defaultPorts: IPorts = {
-  mode: "",
-  localPortsExclude: [],
-};*/
+const defaultAccounts: IAccount[] = [];
 
 const profileSchema = new Schema<IProfile>({
   uuid: { type: String },
@@ -209,17 +198,10 @@ const profileSchema = new Schema<IProfile>({
   canvas: { type: Object, default: defaultCanvas },
   fonts: { type: Object, default: defaultFonts },
   mediaDevices: { type: Object, default: defaultMediaDevices },
-  // webRTC: { type: Object, required: true, default: defaultWebRTC },
   webGL: { type: Object, default: defaultWebGL },
-  /*  webGLMetadata: {
-    type: Object,
-    required: true,
-    default: defaultWebGLMetadata,
-  },*/
-  // extensions: { type: Object, required: true, default: defaultExtensions },
-  // ports: { type: Object, required: true, default: defaultPorts },
   browser: { type: String, required: true, default: "mimic" },
   os: { type: String, required: true, default: "win" },
+  accounts: { type: [Object], default: defaultAccounts },
 });
 
 const Profile = mongoose.model<IProfile>("Profile", profileSchema);
