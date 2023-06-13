@@ -109,15 +109,19 @@ profileController.get("/all", async function (req, res, next) {
 profileController.get("/unused", async (req, res) => {
   try {
     // Find profiles where the number of accounts is less than 2
-    const profiles: Array<{ id: string; remainingAccounts: number }> =
-      await Profile.aggregate([
-        {
-          $project: {
-            // id: "$uuid",
-            remainingAccounts: { $subtract: [2, { $size: "$accounts" }] },
-          },
+    const profiles = await Profile.aggregate([
+      {
+        $match: {
+          $expr: { $lt: [{ $size: "$accounts" }, 2] },
         },
-      ]);
+      },
+      {
+        $project: {
+          uuid: 1,
+          remainingAccounts: { $subtract: [2, { $size: "$accounts" }] },
+        },
+      },
+    ]);
 
     return res.status(200).json({ profiles });
   } catch (error) {
