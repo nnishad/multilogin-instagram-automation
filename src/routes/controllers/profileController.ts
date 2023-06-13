@@ -119,7 +119,6 @@ profileController.get("/all", async function (req, res, next) {
  *       500:
  *         description: Internal server error
  */
-// POST endpoint to generate profiles
 profileController.post("/generate/:count", async (req, res) => {
   try {
     const count = req.params.count;
