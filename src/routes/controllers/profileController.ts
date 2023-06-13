@@ -293,6 +293,9 @@ profileController.post("/:id/addAccount", async (req, res) => {
         .json({ error: "Account limit reached for this profile" });
     }
 
+    // Add the timestamp to the account object
+    account.timestamp = new Date();
+
     // Add the account to the profile's accounts array
     profile.accounts.push(account);
 

@@ -89,6 +89,7 @@ interface IAccount {
   username: string;
   password: string;
   phoneNumber: string;
+  createdTimestamp: Date;
 }
 
 export interface IProfile extends Document {
