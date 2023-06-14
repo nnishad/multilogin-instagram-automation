@@ -201,20 +201,24 @@ profileController.post("/generate/:count", async (req, res) => {
 
 /**
  * @swagger
- * /profile/{id}:
+ * /profile/{uuid}:
  *   get:
- *     summary: Get a profile by ID
+ *     summary: Get a profile by UUID
  *     tags: [Profile]
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: uuid
  *         required: true
  *         schema:
  *           type: string
- *         description: The ID of the profile to retrieve
+ *         description: The UUID of the profile
  *     responses:
  *       200:
- *         description: Profile retrieved successfully
+ *         description: Profile found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Profile'
  *       404:
  *         description: Profile not found
  *       500:
@@ -239,20 +243,20 @@ profileController.get("/:uuid", async (req, res) => {
 
 /**
  * @swagger
- * /profile/{id}:
+ * /profile/{uuid}:
  *   delete:
- *     summary: Delete a profile by ID
+ *     summary: Remove a profile
  *     tags: [Profile]
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: uuid
  *         required: true
  *         schema:
  *           type: string
- *         description: The ID of the profile to delete
+ *         description: The UUID of the profile
  *     responses:
  *       200:
- *         description: Profile deleted successfully
+ *         description: Profile removed successfully
  *       404:
  *         description: Profile not found
  *       500:
@@ -278,17 +282,17 @@ profileController.delete("/:uuid", (req, res) => {
 
 /**
  * @swagger
- * /profile/{id}/addAccount:
+ * /profile/{uuid}/addAccount:
  *   post:
  *     summary: Add an account to a profile
  *     tags: [Profile]
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: uuid
  *         required: true
  *         schema:
  *           type: string
- *         description: The ID of the profile
+ *         description: The UUID of the profile
  *     requestBody:
  *       required: true
  *       content:
@@ -297,16 +301,46 @@ profileController.delete("/:uuid", (req, res) => {
  *             type: object
  *             properties:
  *               account:
- *                 type: object
+ *                 $ref: '#/components/schemas/Account'
  *     responses:
  *       200:
  *         description: Account added to profile
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 profile:
+ *                   $ref: '#/components/schemas/Profile'
  *       400:
  *         description: Account limit reached for this profile
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
  *       404:
  *         description: Profile not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
  *       500:
  *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
  */
 profileController.post("/:uuid/addAccount", async (req, res) => {
   const { uuid } = req.params; // Get the profile ID from the request parameters

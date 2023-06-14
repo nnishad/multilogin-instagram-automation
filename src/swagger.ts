@@ -13,6 +13,20 @@ const swaggerOptions: swaggerJSDoc.Options = {
     },
     components: {
       schemas: {
+        Account: {
+          type: "object",
+          properties: {
+            username: {
+              type: "string",
+            },
+            password: {
+              type: "string",
+            },
+            phoneNumber: {
+              type: "string",
+            },
+          },
+        },
         Profile: {
           type: "object",
           properties: {
@@ -148,6 +162,12 @@ const swaggerOptions: swaggerJSDoc.Options = {
             },
             browser: { type: "string", required: true, default: "mimic" },
             os: { type: "string", required: true, default: "win" },
+            accounts: {
+              type: "array",
+              items: {
+                $ref: "#/components/schemas/Account",
+              },
+            },
           },
         },
         Error: {
