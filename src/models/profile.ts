@@ -136,8 +136,8 @@ const defaultNavigator: INavigator = {
 const defaultStorage = {
   local: true,
   extensions: true,
-  bookmarks: false,
-  history: false,
+  bookmarks: true,
+  history: true,
   passwords: true,
 };
 
