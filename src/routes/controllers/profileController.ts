@@ -182,7 +182,7 @@ profileController.post("/generate/:count", async (req, res) => {
       } else {
         // Save the generated profiles to the database
         await Profile.insertMany(profiles);
-        return res.status(404).json({
+        return res.status(200).json({
           message: `Profiles created: ${profiles.length}`,
           error: "No new proxy found to create profile",
         });
