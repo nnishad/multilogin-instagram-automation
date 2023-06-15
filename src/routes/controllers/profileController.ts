@@ -115,8 +115,7 @@ profileController.get("/unused", async (req, res) => {
         },
       },
       {
-        $project: {
-          uuid: 1,
+        $addFields: {
           remainingAccounts: { $subtract: [2, { $size: "$accounts" }] },
         },
       },
