@@ -53,7 +53,7 @@ const generateProfile = (proxy: IProxyDetails): IProfile => {
       doNotTrack: 0,
       hardwareConcurrency: 4,
     },
-    network: {
+    /*network: {
       proxy: {
         type: "HTTP",
         host: proxy.host,
@@ -61,7 +61,7 @@ const generateProfile = (proxy: IProxyDetails): IProfile => {
         username: proxy.username,
         password: proxy.password,
       },
-    },
+    },*/
     os: os,
   };
 
@@ -171,6 +171,15 @@ profileController.post("/generate/:count", async (req, res) => {
           .then(async (response: any) => {
             logger.info(response.uuid);
             newProfile.uuid = response.uuid;
+            newProfile.network = {
+              proxy: {
+                type: "HTTP",
+                host: proxy.host,
+                port: proxy.port,
+                username: proxy.username,
+                password: proxy.password,
+              },
+            };
             profiles.push(newProfile);
             proxyDocument.isUsed = true;
             await proxyDocument.save();
