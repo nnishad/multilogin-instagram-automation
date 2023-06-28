@@ -108,4 +108,5 @@ export {
   SessionAction,
   Session,
   DailyAction,
+  ActionType,
 };
