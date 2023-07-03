@@ -1,5 +1,12 @@
 import express from "express";
-import { Account, AccountModel, ActionType } from "../../models/account";
+import {
+  Account,
+  AccountModel,
+  ActionType,
+  WarmupAction,
+  WarmupConfiguration,
+  WarmupSession
+} from "../../models/account";
 
 export const accountController = express.Router();
 
@@ -15,6 +22,25 @@ const getRandomActionType = () => {
   return actionTypeValues[randomIndex];
 };
 
+// Helper function to generate a random time between 00:00:00 and 23:59:59
+function generateRandomTime() {
+  const hour = Math.floor(Math.random() * 24).toString().padStart(2, '0');
+  const minute = Math.floor(Math.random() * 60).toString().padStart(2, '0');
+  const second = Math.floor(Math.random() * 60).toString().padStart(2, '0');
+  return `${hour}:${minute}:${second}`;
+}
+
+// Helper function to generate a random end time based on the start time
+function generateRandomEndTime(startTime: string) {
+  const [startHour, startMinute, startSecond] = startTime.split(':').map(Number);
+
+  const endHour = (startHour + Math.floor(Math.random() * 6) + 1) % 24; // Generate random hour between 1 and 6 more than the start hour, ensuring it stays within 0-23
+  const endMinute = Math.floor(Math.random() * 60); // Generate random minute
+  const endSecond = Math.floor(Math.random() * 60); // Generate random second
+
+  return `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}:${endSecond.toString().padStart(2, '0')}`;
+}
+
 // Get all accounts
 accountController.get("/", async (req, res) => {
   try {
@@ -28,54 +54,76 @@ accountController.get("/", async (req, res) => {
 // Create an account
 accountController.post("/add", async (req, res) => {
   try {
-    const { username, password, email, warmup_configuration } = req.body;
+    const { username, password, email } = req.body;
 
-    let generatedWarmupConfig = [];
+    // Generate random warmup configuration
+    const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const warmupConfiguration: WarmupConfiguration[] = [];
 
-    if (warmup_configuration && warmup_configuration.length > 0) {
-      generatedWarmupConfig = warmup_configuration;
-    } else {
-      // Generate random warmup configuration for each day of the week
-      const daysOfWeek = [
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday",
-        "Saturday",
-        "Sunday",
-      ];
-      generatedWarmupConfig = daysOfWeek.map((day) => {
-        const numActions = getRandomNumber(1, 3); // Random number of actions per day
-        const actions = [];
+    for (const day of daysOfWeek) {
+      const actions: WarmupAction[] = [];
 
-        for (let i = 0; i < numActions; i++) {
-          const actionType = getRandomActionType(); // Random action type
-          const count = getRandomNumber(10, 100); // Random count for the action
-          actions.push({ action_type: actionType, count });
+      const randomActionCount = Math.floor(Math.random() * 3) + 1; // Generate 1-3 random actions
+
+      for (let i = 0; i < randomActionCount; i++) {
+        const actionTypeValues = Object.values(ActionType);
+        const randomActionType = actionTypeValues[Math.floor(Math.random() * actionTypeValues.length)];
+        const randomSessionCount = Math.floor(Math.random() * 3) + 1; // Generate 1-3 random sessions
+
+        const sessions: WarmupSession[] = [];
+
+        for (let j = 0; j < randomSessionCount; j++) {
+          const startTime = generateRandomTime(); // Generate random start time
+          const endTime = generateRandomEndTime(startTime); // Generate random end time
+
+          const session: WarmupSession = {
+            session_id: `session${j + 1}`,
+            count: Math.floor(Math.random() * 10) + 1, // Generate random count
+            start_time: startTime,
+            end_time: endTime,
+          };
+
+          sessions.push(session);
         }
 
-        return {
-          day_of_week: day,
-          actions,
+        const action: WarmupAction = {
+          action_type: randomActionType,
+          sessions,
         };
-      });
+
+        actions.push(action);
+      }
+
+      const warmupConfig: WarmupConfiguration = {
+        day_of_week: day,
+        actions,
+      };
+
+      warmupConfiguration.push(warmupConfig);
     }
 
-    // Create the account with the warmup configuration
-    const account = new AccountModel({
+    // Create new account with the generated warmup configuration
+    const newAccount = new AccountModel({
       username,
       password,
       email,
-      warmup_configuration: generatedWarmupConfig,
+      followers: 0,
+      following: 0,
+      posts: 0,
+      last_login: new Date(),
+      created_at: new Date(),
+      warmup_phase: true,
+      warmup_configuration: warmupConfiguration,
+      daily_actions: [],
     });
 
-    // Save the account to the database
-    const savedAccount = await account.save();
+    // Save the new account to the database
+    await newAccount.save();
 
-    return res.status(201).json(savedAccount);
+    res.status(201).json({ message: 'Account created successfully', account: newAccount });
   } catch (error) {
-    return res.status(500).json({ error: "Internal server error" });
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
