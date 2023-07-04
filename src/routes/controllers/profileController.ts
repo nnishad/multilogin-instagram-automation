@@ -1,11 +1,22 @@
-import express, { response } from "express";
+import express from "express";
 import dotenv from "dotenv";
 import ApiClient from "../../util/apiClient";
 import logger from "../../custom-logger";
 import Profile, { IProfile } from "../../models/profile";
-import { faker } from "@faker-js/faker";
 import Proxy, { IProxyDetails } from "../../models/proxy";
-import UserAgent from "user-agents";
+import {
+  AccountModel,
+  ActionType,
+  WarmupAction,
+  WarmupConfiguration,
+  WarmupSession,
+} from "../../models/account";
+import {
+  daysOfWeek,
+  generateProfile,
+  generateRandomEndTime,
+  generateRandomTime,
+} from "../../util/utilities";
 
 dotenv.config();
 
@@ -13,60 +24,6 @@ const apiClientv2 = new ApiClient(process.env.MULTILOGIN_APIv2 ?? "");
 const apiClientv1 = new ApiClient(process.env.MULTILOGIN_APIv1 ?? "");
 
 export const profileController = express.Router();
-
-const generateUserAgent = (osType: string, deviceType: string) => {
-  const agent = new UserAgent({
-    deviceCategory: deviceType,
-    platform: osType,
-  });
-  return agent.random();
-};
-
-const generateProfile = (proxy: IProxyDetails): IProfile => {
-  const profileId = faker.string.uuid();
-  const os = faker.helpers.arrayElement(["win", "lin", "mac"]);
-  let userAgent;
-  switch (os) {
-    case "win":
-      userAgent = generateUserAgent("Win32", "desktop");
-      break;
-    case "lin":
-      userAgent = generateUserAgent("Linux x86_64", "desktop");
-      break;
-    case "mac":
-      userAgent = generateUserAgent("MacIntel", "desktop");
-      break;
-    case "android":
-      userAgent = generateUserAgent("iPhone", "mobile");
-      break;
-  }
-  // const os = agent.os.family;
-  const newProfile: Partial<IProfile> = {
-    name: profileId,
-    notes: faker.lorem.sentence(),
-    navigator: {
-      userAgent: userAgent?.toString() + "",
-      resolution:
-        userAgent?.data.screenWidth + "x" + userAgent?.data.screenHeight,
-      language: "en-US",
-      platform: userAgent?.data.platform + "",
-      doNotTrack: 0,
-      hardwareConcurrency: 4,
-    },
-    network: {
-      proxy: {
-        type: "HTTP",
-        host: proxy.host,
-        port: proxy.port,
-        username: proxy.username,
-        password: proxy.password,
-      },
-    },
-    os: os,
-  };
-
-  return new Profile(newProfile);
-};
 
 /**
  * @swagger
@@ -343,7 +300,7 @@ profileController.delete("/:uuid", (req, res) => {
  */
 profileController.post("/:uuid/addAccount", async (req, res) => {
   const { uuid } = req.params; // Get the profile ID from the request parameters
-  const { account } = req.body; // Get the account object from the request body
+  const { username, password, email } = req.body; // Get the account object from the request body
 
   try {
     // Find the profile by ID
@@ -360,18 +317,75 @@ profileController.post("/:uuid/addAccount", async (req, res) => {
         .json({ error: "Account limit reached for this profile" });
     }
 
-    // Add the timestamp to the account object
-    account.timestamp = new Date();
+    const warmupConfiguration: WarmupConfiguration[] = [];
+
+    for (const day of daysOfWeek) {
+      const actions: WarmupAction[] = [];
+
+      const randomActionCount = Math.floor(Math.random() * 3) + 1; // Generate 1-3 random actions
+
+      for (let i = 0; i < randomActionCount; i++) {
+        const actionTypeValues = Object.values(ActionType);
+        const randomActionType =
+          actionTypeValues[Math.floor(Math.random() * actionTypeValues.length)];
+        const randomSessionCount = Math.floor(Math.random() * 3) + 1; // Generate 1-3 random sessions
+
+        const sessions: WarmupSession[] = [];
+
+        for (let j = 0; j < randomSessionCount; j++) {
+          const startTime = generateRandomTime(); // Generate random start time
+          const endTime = generateRandomEndTime(startTime); // Generate random end time
+
+          const session: WarmupSession = {
+            session_id: `session${j + 1}`,
+            count: Math.floor(Math.random() * 10) + 1, // Generate random count
+            start_time: startTime,
+            end_time: endTime,
+          };
+
+          sessions.push(session);
+        }
+
+        const action: WarmupAction = {
+          action_type: randomActionType,
+          sessions,
+        };
+
+        actions.push(action);
+      }
+
+      const warmupConfig: WarmupConfiguration = {
+        day_of_week: day,
+        actions,
+      };
+
+      warmupConfiguration.push(warmupConfig);
+    }
+
+    // Create new account with the generated warmup configuration
+    const newAccount = new AccountModel({
+      username,
+      password,
+      email,
+      followers: 0,
+      following: 0,
+      posts: 0,
+      last_login: new Date(),
+      created_at: new Date(),
+      warmup_phase: true,
+      warmup_configuration: warmupConfiguration,
+      daily_actions: [],
+    });
 
     // Add the account to the profile's accounts array
-    profile.accounts.push(account);
+    profile.accounts.push(newAccount);
 
     // Save the updated profile
     await profile.save();
 
     return res
-      .status(200)
-      .json({ message: "Account added to profile", profile });
+      .status(201)
+      .json({ message: "Account created successfully", account: newAccount });
   } catch (error) {
     console.error("Error adding account to profile:", error);
     return res.status(500).json({ error: "Internal server error" });

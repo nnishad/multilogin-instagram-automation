@@ -1,8 +1,8 @@
 import express from "express";
 
-export const mockSMSPoolController = express.Router();
+export const mockController = express.Router();
 
-mockSMSPoolController.get("/sms/check", (req, res) => {
+mockController.get("/sms/check", (req, res) => {
   // Extract the "key" and "orderId" parameters from the request query
   const { key, orderId } = req.query;
   res.status(200).json({
@@ -14,7 +14,7 @@ mockSMSPoolController.get("/sms/check", (req, res) => {
   });
 });
 
-mockSMSPoolController.get("/purchase/sms", (req, res) => {
+mockController.get("/purchase/sms", (req, res) => {
   // Extract the "key", "country", and "service" parameters from the request query
   const { key, country, service } = req.query;
   res.status(200).json({
@@ -28,4 +28,12 @@ mockSMSPoolController.get("/purchase/sms", (req, res) => {
     cc: "91",
     message: "",
   });
+});
+
+mockController.post("/api/v2/profile", (req, res) => {
+  const response = {
+    uuid: "2888c04a-b06f-4c2a-b143-07d65484185c",
+  };
+
+  return res.status(200).json(response);
 });

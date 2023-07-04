@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
+import { IAccount } from "./account";
 
 interface INavigator {
   userAgent: string;
@@ -84,12 +85,6 @@ interface IExtensions {
 interface IPorts {
   mode: string;
   localPortsExclude: number[];
-}
-interface IAccount {
-  username: string;
-  password: string;
-  phoneNumber: string;
-  createdTimestamp: Date;
 }
 
 export interface IProfile extends Document {

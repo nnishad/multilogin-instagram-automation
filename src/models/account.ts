@@ -25,9 +25,11 @@ interface WarmupConfiguration {
   actions: WarmupAction[];
 }
 
-interface Account extends Document {
+interface IAccount extends Document {
   username: string;
   password: string;
+  phoneNumber: string;
+  createdTimestamp: Date;
   email: string;
   followers: number;
   following: number;
@@ -57,7 +59,7 @@ interface DailyAction {
   sessions: Session[];
 }
 
-const accountSchema = new Schema<Account>({
+const accountSchema = new Schema<IAccount>({
   username: { type: String, required: true },
   password: { type: String, required: true },
   email: { type: String, required: true },
@@ -72,7 +74,11 @@ const accountSchema = new Schema<Account>({
       day_of_week: { type: String, required: true },
       actions: [
         {
-          action_type: { type: String, enum: Object.values(ActionType), required: true },
+          action_type: {
+            type: String,
+            enum: Object.values(ActionType),
+            required: true,
+          },
           sessions: [
             {
               session_id: { type: String, required: true },
@@ -96,7 +102,11 @@ const accountSchema = new Schema<Account>({
           actions: [
             {
               action_id: { type: String, required: true },
-              action_type: { type: String, enum: Object.values(ActionType), required: true },
+              action_type: {
+                type: String,
+                enum: Object.values(ActionType),
+                required: true,
+              },
               target_usernames: { type: [String], default: [] },
             },
           ],
@@ -106,11 +116,11 @@ const accountSchema = new Schema<Account>({
   ],
 });
 
-const AccountModel = model<Account>("Account", accountSchema);
+const AccountModel = model<IAccount>("Account", accountSchema);
 
 export {
   AccountModel,
-  Account,
+  IAccount,
   ActionType,
   WarmupConfiguration,
   WarmupAction,
