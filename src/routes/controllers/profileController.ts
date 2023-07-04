@@ -395,3 +395,38 @@ profileController.post("/:uuid/addAccount", async (req, res) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 });
+
+profileController.get("/warmup/list", async (req, res) => {
+  try {
+    const profiles = await Profile.aggregate([
+      {
+        $match: {
+          "accounts.warmup_phase": true,
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          uuid: 1,
+          accounts: {
+            $filter: {
+              input: "$accounts",
+              as: "account",
+              cond: {
+                $eq: ["$$account.warmup_phase", true],
+              },
+            },
+          },
+        },
+      },
+    ]);
+
+    // Return the profiles as a JSON response
+    res.json(profiles);
+  } catch (error) {
+    // Handle any errors that occur during the database query
+    res
+      .status(500)
+      .json({ error: "An error occurred while retrieving profiles" });
+  }
+});
