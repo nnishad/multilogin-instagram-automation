@@ -328,6 +328,10 @@ profileController.post("/:uuid/addAccount", async (req, res) => {
         const actionTypeValues = Object.values(ActionType);
         const randomActionType =
           actionTypeValues[Math.floor(Math.random() * actionTypeValues.length)];
+        if (randomActionType == ActionType.BLOCK) {
+          //  BLOCK = "BLOCK" to remove block action
+          continue;
+        }
         const randomSessionCount = Math.floor(Math.random() * 3) + 1; // Generate 1-3 random sessions
 
         const sessions: WarmupSession[] = [];
