@@ -17,6 +17,7 @@ import {
   generateRandomEndTime,
   generateRandomTime,
 } from "../../util/utilities";
+import { fa } from "@faker-js/faker";
 
 dotenv.config();
 
@@ -345,6 +346,7 @@ profileController.post("/:uuid/addAccount", async (req, res) => {
             count: Math.floor(Math.random() * 10) + 1, // Generate random count
             start_time: startTime,
             end_time: endTime,
+            isSessionCompleted: false,
           };
 
           sessions.push(session);
@@ -353,6 +355,7 @@ profileController.post("/:uuid/addAccount", async (req, res) => {
         const action: WarmupAction = {
           action_type: randomActionType,
           sessions,
+          isActionCompleted: false,
         };
 
         actions.push(action);
@@ -360,6 +363,7 @@ profileController.post("/:uuid/addAccount", async (req, res) => {
 
       const warmupConfig: WarmupConfiguration = {
         day_of_week: day,
+        isAllActionsCompleted: false,
         actions,
       };
 
@@ -409,11 +413,141 @@ profileController.get("/warmup/list", async (req, res) => {
           _id: 0,
           uuid: 1,
           accounts: {
-            $filter: {
+            $map: {
               input: "$accounts",
               as: "account",
-              cond: {
-                $eq: ["$$account.warmup_phase", true],
+              in: {
+                $mergeObjects: [
+                  "$$account",
+                  {
+                    warmup_configuration: {
+                      $filter: {
+                        input: "$$account.warmup_configuration",
+                        as: "config",
+                        cond: {
+                          $and: [
+                            { $eq: ["$$config.isAllActionsCompleted", false] },
+                            {
+                              $gt: [
+                                {
+                                  $size: {
+                                    $filter: {
+                                      input: "$$config.actions",
+                                      as: "action",
+                                      cond: {
+                                        $eq: [
+                                          "$$action.isActionCompleted",
+                                          false,
+                                        ],
+                                      },
+                                    },
+                                  },
+                                },
+                                0,
+                              ],
+                            },
+                          ],
+                        },
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          uuid: 1,
+          accounts: {
+            $map: {
+              input: "$accounts",
+              as: "account",
+              in: {
+                $mergeObjects: [
+                  "$$account",
+                  {
+                    warmup_configuration: {
+                      $map: {
+                        input: "$$account.warmup_configuration",
+                        as: "config",
+                        in: {
+                          $mergeObjects: [
+                            "$$config",
+                            {
+                              actions: {
+                                $filter: {
+                                  input: "$$config.actions",
+                                  as: "action",
+                                  cond: {
+                                    $eq: ["$$action.isActionCompleted", false],
+                                  },
+                                },
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          uuid: 1,
+          accounts: {
+            $map: {
+              input: "$accounts",
+              as: "account",
+              in: {
+                $mergeObjects: [
+                  "$$account",
+                  {
+                    warmup_configuration: {
+                      $map: {
+                        input: "$$account.warmup_configuration",
+                        as: "config",
+                        in: {
+                          $mergeObjects: [
+                            "$$config",
+                            {
+                              actions: {
+                                $map: {
+                                  input: "$$config.actions",
+                                  as: "action",
+                                  in: {
+                                    $mergeObjects: [
+                                      "$$action",
+                                      {
+                                        sessions: {
+                                          $filter: {
+                                            input: "$$action.sessions",
+                                            as: "session",
+                                            cond: {
+                                              $eq: [
+                                                "$$session.isSessionCompleted",
+                                                false,
+                                              ],
+                                            },
+                                          },
+                                        },
+                                      },
+                                    ],
+                                  },
+                                },
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    },
+                  },
+                ],
               },
             },
           },
@@ -421,12 +555,92 @@ profileController.get("/warmup/list", async (req, res) => {
       },
     ]);
 
+    if (profiles.length === 0) {
+      return res.status(404).json({ error: "No profiles found" });
+    }
+
     // Return the profiles as a JSON response
     res.json(profiles);
   } catch (error) {
-    // Handle any errors that occur during the database query
+    console.error("Error retrieving profiles:", error);
     res
       .status(500)
       .json({ error: "An error occurred while retrieving profiles" });
   }
 });
+
+profileController.put(
+  "/profiles/:uuid/accounts/:accountId/warmup_configuration/:day/actions/:actionType/sessions/:sessionId/completed",
+  async (req, res) => {
+    const { uuid, accountId, day, actionType, sessionId } = req.params;
+
+    try {
+      const profile = await Profile.findOne({ uuid });
+
+      if (!profile) {
+        return res.status(404).json({ error: "Profile not found" });
+      }
+
+      const account = profile.accounts.find((acc) => acc.id === accountId);
+
+      if (!account) {
+        return res.status(404).json({ error: "Account not found" });
+      }
+
+      const warmupConfig = account.warmup_configuration.find(
+        (config) => config.day_of_week === day
+      );
+
+      if (!warmupConfig) {
+        return res
+          .status(404)
+          .json({ error: "Warmup configuration not found" });
+      }
+
+      const action = warmupConfig.actions.find(
+        (action) => action.action_type === actionType
+      );
+
+      if (!action) {
+        return res.status(404).json({ error: "Action not found" });
+      }
+
+      const session = action.sessions.find(
+        (session) => session.session_id === sessionId
+      );
+
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+
+      session.isSessionCompleted = true;
+
+      // Check if all sessions in the action are completed
+      const isActionCompleted = action.sessions.every(
+        (session) => session.isSessionCompleted
+      );
+
+      if (isActionCompleted) {
+        action.isActionCompleted = true;
+      }
+
+      // Check if all actions in the warmup configuration day are completed
+      const isAllActionsCompleted = warmupConfig.actions.every(
+        (action) => action.isActionCompleted
+      );
+
+      if (isAllActionsCompleted) {
+        warmupConfig.isAllActionsCompleted = true;
+      }
+
+      await profile.save();
+
+      return res
+        .status(200)
+        .json({ message: "Session completed successfully" });
+    } catch (error) {
+      console.error("Error updating session completion:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);

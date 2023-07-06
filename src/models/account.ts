@@ -13,16 +13,19 @@ interface WarmupSession {
   count: number;
   start_time: string;
   end_time: string;
+  isSessionCompleted: boolean;
 }
 
 interface WarmupAction {
   action_type: ActionType;
   sessions: WarmupSession[];
+  isActionCompleted: boolean;
 }
 
 interface WarmupConfiguration {
   day_of_week: string;
   actions: WarmupAction[];
+  isAllActionsCompleted: boolean;
 }
 
 interface IAccount extends Document {
@@ -72,6 +75,7 @@ const accountSchema = new Schema<IAccount>({
   warmup_configuration: [
     {
       day_of_week: { type: String, required: true },
+      isAllActionsCompleted: { type: Boolean, default: false },
       actions: [
         {
           action_type: {
@@ -79,12 +83,14 @@ const accountSchema = new Schema<IAccount>({
             enum: Object.values(ActionType),
             required: true,
           },
+          isActionCompleted: { type: Boolean, default: false },
           sessions: [
             {
               session_id: { type: String, required: true },
               count: { type: Number, required: true },
               start_time: { type: String, required: true },
               end_time: { type: String, required: true },
+              isSessionCompleted: { type: Boolean, default: false },
             },
           ],
         },
