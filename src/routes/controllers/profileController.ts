@@ -570,7 +570,7 @@ profileController.get("/warmup/list", async (req, res) => {
 });
 
 profileController.put(
-  "/profiles/:uuid/accounts/:accountId/warmup_configuration/:day/actions/:actionType/sessions/:sessionId/completed",
+  "/:uuid/accounts/:accountId/warmup_configuration/:day/actions/:actionType/sessions/:sessionId/completed",
   async (req, res) => {
     const { uuid, accountId, day, actionType, sessionId } = req.params;
 
@@ -580,8 +580,11 @@ profileController.put(
       if (!profile) {
         return res.status(404).json({ error: "Profile not found" });
       }
+      const accountIndex = profile.accounts.findIndex(
+        (acc) => acc._id == accountId
+      );
 
-      const account = profile.accounts.find((acc) => acc.id === accountId);
+      const account = profile.accounts.find((acc) => acc._id == accountId);
 
       if (!account) {
         return res.status(404).json({ error: "Account not found" });
@@ -633,11 +636,12 @@ profileController.put(
         warmupConfig.isAllActionsCompleted = true;
       }
 
+      profile.accounts[accountIndex] = account; // Update the modified account object back to the profile
       await profile.save();
 
       return res
         .status(200)
-        .json({ message: "Session completed successfully" });
+        .json({ message: "Session completed successfully", profile: profile });
     } catch (error) {
       console.error("Error updating session completion:", error);
       return res.status(500).json({ error: "Internal server error" });
