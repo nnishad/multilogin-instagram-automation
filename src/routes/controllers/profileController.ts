@@ -69,12 +69,12 @@ profileController.get("/unused", async (req, res) => {
     const profiles = await Profile.aggregate([
       {
         $match: {
-          $expr: { $lt: [{ $size: "$accounts" }, 2] },
+          $expr: { $eq: [{ $size: "$accounts" }, 1] },
         },
       },
       {
         $addFields: {
-          remainingAccounts: { $subtract: [2, { $size: "$accounts" }] },
+          remainingAccounts: { $subtract: [1, { $size: "$accounts" }] },
         },
       },
     ]);
@@ -85,7 +85,6 @@ profileController.get("/unused", async (req, res) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 });
-
 /**
  * @swagger
  * /profile/generate/{count}:
