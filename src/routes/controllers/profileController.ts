@@ -69,7 +69,7 @@ profileController.get("/unused", async (req, res) => {
     const profiles = await Profile.aggregate([
       {
         $match: {
-          $expr: { $eq: [{ $size: "$accounts" }, 1] },
+          $expr: { $lq: [{ $size: "$accounts" }, 1] },
         },
       },
       {
