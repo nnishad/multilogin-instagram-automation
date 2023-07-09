@@ -312,7 +312,7 @@ profileController.post("/:uuid/addAccount", async (req, res) => {
     }
 
     // Check if the profile already has two accounts
-    if (profile.accounts.length >= 2) {
+    if (profile.accounts.length >= 1) {
       return res
         .status(400)
         .json({ error: "Account limit reached for this profile" });
