@@ -8,16 +8,40 @@ enum ActionType {
   MEDIA_UPLOAD = "MEDIA_UPLOAD",
 }
 
-interface Action {
+interface WarmupSession {
+  session_id: string;
+  count: number;
+  start_time: string;
+  end_time: string;
+  isSessionCompleted: boolean;
+}
+
+interface WarmupAction {
   action_type: ActionType;
-  count?: number;
-  sessions?: number;
-  start_time?: string;
+  sessions: WarmupSession[];
+  isActionCompleted: boolean;
 }
 
 interface WarmupConfiguration {
   day_of_week: string;
-  actions: Action[];
+  actions: WarmupAction[];
+  isAllActionsCompleted: boolean;
+}
+
+interface IAccount extends Document {
+  username: string;
+  password: string;
+  phoneNumber: string;
+  createdTimestamp: Date;
+  email: string;
+  followers: number;
+  following: number;
+  posts: number;
+  last_login: Date;
+  created_at: Date;
+  warmup_phase: boolean;
+  warmup_configuration: WarmupConfiguration[];
+  daily_actions: DailyAction[];
 }
 
 interface SessionAction {
@@ -38,21 +62,7 @@ interface DailyAction {
   sessions: Session[];
 }
 
-interface Account extends Document {
-  username: string;
-  password: string;
-  email: string;
-  followers: number;
-  following: number;
-  posts: number;
-  last_login: Date;
-  created_at: Date;
-  warmup_phase: boolean;
-  warmup_configuration: WarmupConfiguration[];
-  daily_actions: DailyAction[];
-}
-
-const accountSchema = new Schema<Account>({
+const accountSchema = new Schema<IAccount>({
   username: { type: String, required: true },
   password: { type: String, required: true },
   email: { type: String, required: true },
@@ -65,15 +75,24 @@ const accountSchema = new Schema<Account>({
   warmup_configuration: [
     {
       day_of_week: { type: String, required: true },
+      isAllActionsCompleted: { type: Boolean, default: false },
       actions: [
         {
-          action_type: { type: String, enum: ActionType, required: true },
-          count: { type: Number, default: Math.floor(Math.random() * 10) + 1 },
-          sessions: {
-            type: Number,
-            default: Math.floor(Math.random() * 5) + 1,
+          action_type: {
+            type: String,
+            enum: Object.values(ActionType),
+            required: true,
           },
-          start_time: { type: String, default: new Date().toISOString() },
+          isActionCompleted: { type: Boolean, default: false },
+          sessions: [
+            {
+              session_id: { type: String, required: true },
+              count: { type: Number, required: true },
+              start_time: { type: String, required: true },
+              end_time: { type: String, required: true },
+              isSessionCompleted: { type: Boolean, default: false },
+            },
+          ],
         },
       ],
     },
@@ -89,7 +108,11 @@ const accountSchema = new Schema<Account>({
           actions: [
             {
               action_id: { type: String, required: true },
-              action_type: { type: String, enum: ActionType, required: true },
+              action_type: {
+                type: String,
+                enum: Object.values(ActionType),
+                required: true,
+              },
               target_usernames: { type: [String], default: [] },
             },
           ],
@@ -98,15 +121,17 @@ const accountSchema = new Schema<Account>({
     },
   ],
 });
-const AccountModel = model<Account>("Account", accountSchema);
+
+const AccountModel = model<IAccount>("Account", accountSchema);
 
 export {
   AccountModel,
-  Account,
-  Action,
-  WarmupConfiguration,
-  SessionAction,
-  Session,
-  DailyAction,
+  IAccount,
   ActionType,
+  WarmupConfiguration,
+  WarmupAction,
+  WarmupSession,
+  DailyAction,
+  Session,
+  SessionAction,
 };
